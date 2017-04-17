@@ -1,9 +1,14 @@
 import os
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
+import nltk
+from nltk.stem import SnowballStemmer
+
+
 
 senlist = None    #the list of sentence of the article cluster
 toklist = None    #the list of sentence after tokenlizing
+senvec = None     #the vector of sentence
 
 # remove some unecessary signals
 def filterDoc(doc):
@@ -29,6 +34,7 @@ def filterDoc(doc):
 def processCluster(Dir):
     global senlist
     global toklist
+    global senvec
     senlist = []
     toklist = []
     filelist = os.listdir(Dir)
@@ -55,14 +61,29 @@ def processCluster(Dir):
             isStart = True
     for i in range(len(senEnd)):
         senlist.append(articles[senStart[i]:senEnd[i] + 1])
+    stemmer = SnowballStemmer("english") 
+    for s in senlist:
+        toklist.append(s.split(' '))
+    tmplist = []
+    siglist = ['.', ':', '?', '!', "'s", '"']
+    for s in senlist:
+        s = s.lower()
+        for sig in siglist:
+            s = s.replace(sig, '')
+        s = s.split(' ')
+        tempsen = [stemmer.stem(w) for w in s]
+        sen = ""
+        for w in tempsen:
+            sen += w + " "
+        tmplist.append(sen)
+    
     vectorizer = TfidfVectorizer(stop_words='english')
-    toklist = vectorizer.fit_transform(senlist)
-    #for s in senlist:
-    #    toklist.append(s.split(' '))
+    senvec = vectorizer.fit_transform(tmplist)
     
     #toklist = vectorizer.inverse_transform(toklist)
-    toklist = toklist.toarray()
-    #print list(toklist[1])
+    senvec = senvec.toarray()
+    print list(senvec[1])
+    print len(senvec[1])
     '''
     with open("test",'w') as fw:
         fw.write(str(len(senlist)))
@@ -70,9 +91,9 @@ def processCluster(Dir):
        # fw.write(str(len(toklist)) + '\n')        
         fw.write(str(toklist) + '\n')
     '''
-    return (senlist, toklist)
+    return (senlist, toklist,senvec)
     
-#if __name__ == '__main__':
- #   processCluster('data/cv/docs/d307b')
+if __name__ == '__main__':
+    processCluster('data/cv/docs/d307b')
 
 

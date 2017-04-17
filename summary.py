@@ -7,6 +7,7 @@ def calsim(line1, line2):
     innerPro = 0
     len1 = 0
     len2 = 0
+      
     for i in range(len(line1)):
         if line1[i] == 0.0 or line2[i] == 0.0:
             innerPro += 0
@@ -14,7 +15,9 @@ def calsim(line1, line2):
             innerPro += line1[i] * line2[i]
         len1 += line1[i] * line1[i]
         len2 += line2[i] * line2[i]
-    return innerPro / (np.sqrt(len1) * np.sqrt(len2))
+    return innerPro / (np.sqrt(len1) * np.sqrt(len2) + 1)
+    
+   # return len(line1)
 
 '''
 def calscore(unsel, sel, lamb):
@@ -34,7 +37,7 @@ def calscore(unsel, sel, lamb):
     return score
 '''
 
-def deltaScore(sen, unsel, sel ,lamb, p, index, sentenlist):
+def deltaScore(sen, unsel, sel ,lamb, p, index, tokenlist):
     score = 0
     red = 0
     for i in unsel:
@@ -42,29 +45,29 @@ def deltaScore(sen, unsel, sel ,lamb, p, index, sentenlist):
     score = lamb * score
     for i in sel:
         red += calsim(i, sen)
-    return (score - red) / math.pow(len(sentenlist[index]), p)
+    return (score - red) / math.pow(len(tokenlist[index]), p)
 
 def getSummary(inputDir, maxlen, lamb, p):
-    senlist, toklist = article.processCluster(inputDir)
+    senlist, toklist, senvec = article.processCluster(inputDir)
     chosen = [0 for i in range(len(senlist))]
     lenth = 0
     while(True):
         for i in range(len(senlist)):
             maxId = ""
             maxInc = -1000000
-            if not chosen[i] and lenth + len(senlist[i]) < maxlen:
-                selected = [toklist[k] for k in range(len(chosen)) if chosen[k] == 1]
+            if not chosen[i] and lenth + len(toklist[i]) < maxlen:
+                selected = [senvec[k] for k in range(len(chosen)) if chosen[k] == 1]
                 chosen[i] = 1
-                unselected = [toklist[k] for k in range(len(chosen)) if chosen[k] == 0]
+                unselected = [senvec[k] for k in range(len(chosen)) if chosen[k] == 0]
                 chosen[i] = 0
-                inc = deltaScore(toklist[i], unselected, selected, lamb, p, i, senlist)
+                inc = deltaScore(senvec[i], unselected, selected, lamb, p, i, toklist)
                 if inc > maxInc:
                     maxInc = inc
                     maxId = i
         if maxId == "":
             break
         chosen[maxId] = 1
-        lenth += len(senlist[maxId])
+        lenth += len(toklist[maxId])
         if lenth > maxlen:
             break
     return (chosen, senlist)
